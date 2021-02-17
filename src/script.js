@@ -3,9 +3,25 @@ import * as THREE from "three";
 import gsap from "gsap";
 const canvas = document.querySelector(".webgl");
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import * as dat from "dat.gui";
+import { GUI } from "dat.gui";
 
-const gui = new dat.GUI();
+const loadingManager = new THREE.LoadingManager()
+const textureLoader = new THREE.TextureLoader();
+
+const colorTexture = textureLoader.load("/textures/door/color.jpg");
+const minecraftTexture = textureLoader.load("/textures/minecraft.png")
+const alphaTexture = textureLoader.load("/textures/door/alpha.jpg");
+const heightTexture = textureLoader.load("/textures/door/height.jpg");
+const normalTexture = textureLoader.load("/textures/door/normal.jpg");
+const ambientOcclusionTexture = textureLoader.load("/textures/door/ambientOcclusion.jpg");
+const metalnessTexture = textureLoader.load("/textures/door/metalness.jpg");
+const roughnessTexture = textureLoader.load("/textures/door/roughness.jpg");
+
+colorTexture.generateMipmaps = false
+minecraftTexture.magFilter = THREE.NearestFilter;
+minecraftTexture.minFilter = THREE.NearestFilter;
+
+const gui = new GUI();
 const parameters = {
   color: "#00FFFF",
   spin: () => {
@@ -33,8 +49,8 @@ window.addEventListener("mousemove", (e) => {
 const scene = new THREE.Scene();
 
 // Objects
-const geometry = new THREE.BoxGeometry(0.7, 0.7, 0.7);
-const material = new THREE.MeshBasicMaterial({ color: parameters.color });
+const geometry = new THREE.BoxGeometry(1, 1, 1);
+const material = new THREE.MeshBasicMaterial({ map: minecraftTexture });
 const mesh = new THREE.Mesh(geometry, material);
 mesh.visible = true;
 scene.add(mesh);

@@ -1,67 +1,64 @@
 import "./style.css";
 import * as THREE from "three";
 import gsap from "gsap";
-const canvas = document.querySelector(".webgl");
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GUI } from "dat.gui";
 
-const loadingManager = new THREE.LoadingManager()
-const textureLoader = new THREE.TextureLoader();
-
-const colorTexture = textureLoader.load("/textures/door/color.jpg");
-const minecraftTexture = textureLoader.load("/textures/minecraft.png")
-const alphaTexture = textureLoader.load("/textures/door/alpha.jpg");
-const heightTexture = textureLoader.load("/textures/door/height.jpg");
-const normalTexture = textureLoader.load("/textures/door/normal.jpg");
-const ambientOcclusionTexture = textureLoader.load("/textures/door/ambientOcclusion.jpg");
-const metalnessTexture = textureLoader.load("/textures/door/metalness.jpg");
-const roughnessTexture = textureLoader.load("/textures/door/roughness.jpg");
-
-colorTexture.generateMipmaps = false
-minecraftTexture.magFilter = THREE.NearestFilter;
-minecraftTexture.minFilter = THREE.NearestFilter;
-
+const canvas = document.querySelector(".webgl");
+const scene = new THREE.Scene();
 const gui = new GUI();
-const parameters = {
-  color: "#00FFFF",
-  spin: () => {
-    gsap.to(mesh.rotation, { y: mesh.rotation.y + 10, duration: 1 });
-  },
-};
 
-gui
-  .addColor(parameters, "color")
-  .onChange(() => material.color.set(parameters.color));
+const textureLoader = new THREE.TextureLoader();
+const matcapTexture = textureLoader.load('/textures/matcaps/5.png')
 
-gui.add(parameters, "spin");
+const fontLoader = new THREE.FontLoader();
+fontLoader.load("/fonts/gentilis_bold.typeface.json", (font) => {
+  const textGeometry = new THREE.TextGeometry("Fayd", {
+    font,
+    size: 1,
+    height: 0.2,
+    curveSegments: 5,
+    bevelEnabled: true,
+    bevelThickness: 0.03,
+    bevelSize: 0.02,
+    bevelOffset: 0,
+    bevelSegments: 4,
+  });
 
-// Mouse Coords
-const cursor = {
-  x: 0,
-  y: 0,
-};
-window.addEventListener("mousemove", (e) => {
-  cursor.x = e.clientX / sizes.width - 0.5;
-  cursor.y = -(e.clientY / sizes.height - 0.5);
+  textGeometry.center()
+
+  const textMaterial = new THREE.MeshNormalMaterial();
+  const text = new THREE.Mesh(textGeometry, textMaterial);
+  scene.add(text);
+
+  const donutGeometry = new THREE.TorusGeometry(0.3, 0.2, 20, 45);
+  const donutMaterial = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
+
+  for (let i = 0; i < 300; i++) {
+    const donut = new THREE.Mesh(donutGeometry, donutMaterial)
+
+    donut.position.x = (Math.random() - 0.5) * 10
+    donut.position.y = (Math.random() - 0.5) * 10
+    donut.position.z = (Math.random() - 0.5) * 10
+
+    donut.rotation.x = Math.random() * Math.PI
+    donut.rotation.y = Math.random() * Math.PI
+
+    const scale = Math.random() * 0.5
+    donut.scale.set(scale, scale, scale);
+
+    scene.add(donut)
+  }
 });
 
-// Scene
-const scene = new THREE.Scene();
+// Lights
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+const pointLight = new THREE.PointLight(0xffffff, 0.5);
+pointLight.position.x = 2;
+pointLight.position.y = 3;
+pointLight.position.z = 4;
 
-// Objects
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshBasicMaterial({ map: minecraftTexture });
-const mesh = new THREE.Mesh(geometry, material);
-mesh.visible = true;
-scene.add(mesh);
-
-gui.add(mesh.position, "y", -3, 3, 0.01).name("Elevation");
-gui.add(mesh, "visible");
-gui.add(material, "wireframe");
-
-// Axes helper
-const axeshelper = new THREE.AxesHelper();
-scene.add(axeshelper);
+scene.add(ambientLight, pointLight);
 
 // Sizes
 const sizes = {
@@ -79,25 +76,6 @@ window.addEventListener("resize", () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-window.addEventListener("dblclick", (e) => {
-  const fullscreenElement =
-    document.fullscreenElement || document.webkitFullscreenElement;
-
-  if (!fullscreenElement) {
-    if (canvas.requestFullscreen) {
-      canvas.requestFullscreen();
-    } else if (canvas.webkitRequestFullscreen) {
-      canvas.webkitRequestFullscreen();
-    }
-  } else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen();
-    }
-  }
-});
-
 // Camera
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -105,13 +83,11 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.z = 3;
+camera.position.z = 4;
 scene.add(camera);
 
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
-
-camera.lookAt(mesh.position);
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({
@@ -120,9 +96,11 @@ const renderer = new THREE.WebGLRenderer({
 
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const clock = new THREE.Clock();
 
 // Animations
 function tick() {
+  const elapsedTime = clock.getElapsedTime();
   controls.update();
 
   renderer.render(scene, camera);
